@@ -1,12 +1,9 @@
 import React, { useState,useEffect } from 'react';
 import { Text, View, SafeAreaView } from 'react-native';
 import TabButton from './TabButton';
+import AddForm from './addForm';
 
-const TabScreen = ({defaultTab }) => {
-  const [selectedTab, setSelectedTab] = useState(defaultTab ?? 0);
-  useEffect(() => {
-    setSelectedTab(defaultTab);
-  }, [defaultTab]);
+const TabScreen = ({ selectedTab, setSelectedTab }) => {
   const button = [
     { title: 'Income' },
     { title: 'Expense' },
@@ -20,14 +17,12 @@ const TabScreen = ({defaultTab }) => {
         selectedTab={selectedTab}
         setSelectedTab={setSelectedTab}
       />
-      <View
-        style={{
-          flex: 1,
-          marginTop: 10,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+      <View style={{ flex: 1 }}>
+        {selectedTab === 0 ? (
+          <AddForm isExpense={false} />
+        ) : (
+          <AddForm isExpense={true} />
+        )}
       </View>
     </SafeAreaView>
   );

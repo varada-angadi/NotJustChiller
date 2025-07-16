@@ -72,7 +72,7 @@ export default function StickyFAB() {
       translateY: action2Y,
       onPress: () => {
         toggleMenu();
-        router.push('/addIncome');
+        router.push({ pathname: '/addTransaction', params: { defaultTab: 0 } });
       },
     },
     {
@@ -81,7 +81,7 @@ export default function StickyFAB() {
       translateY: action1Y,
       onPress: () => {
         toggleMenu();
-        router.push('/addExpense');
+        router.push({ pathname: '/addTransaction', params: { defaultTab: 1 } });
       },
     },
   ];

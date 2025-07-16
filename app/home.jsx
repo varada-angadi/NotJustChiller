@@ -10,7 +10,7 @@ import dayjs from 'dayjs';
 import WeeklyBarChart from '../components/weeklyExpenseGraph';
 import SavingsCard from '../components/savingsCard';
 import RecentActivitySection from '../components/recent';
-import StickyFAB from '../components/animatedFab';
+import StickyFAB from '../components/fab';
 
 export default function Home() {
     const router=useRouter();
@@ -53,7 +53,7 @@ export default function Home() {
           </TouchableOpacity>
         </View>
 
-        <View
+        <TouchableOpacity onPress={() => router.push("/planBudget")}
           className="items-center"
           style={{ paddingTop: 20, paddingHorizontal: 30 }}
         >
@@ -98,11 +98,13 @@ export default function Home() {
           >
             {today}
           </Text>
-        </View>
+        </TouchableOpacity>
 
         <View className="bg-white rounded-t-[25px] px-6 pt-6 mt-8">
           <View className="flex-row justify-center items-stretch min-h-[100px]">
-            <TouchableOpacity className="flex-1 justify-center items-center">
+
+            <TouchableOpacity onPress={() => router.push("/trackIncome")}
+            className="flex-1 justify-center items-center">
               <Text
                 style={{
                   textAlign: "center",
@@ -128,7 +130,7 @@ export default function Home() {
             <View style={seperatorStyles}></View>
 
             <TouchableOpacity
-              onPress={() => router.push("/expense")}
+              onPress={() => router.push("/trackExpense")}
               className="flex-1 justify-center items-center"
             >
               <Text
@@ -153,6 +155,7 @@ export default function Home() {
                 {showBalance ? "₹ 5,000" : "•••••"}
               </Text>
             </TouchableOpacity>
+            
           </View>
           <Text
             className="mt-2 text-center"

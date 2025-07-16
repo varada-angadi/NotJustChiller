@@ -4,10 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'react-native';
 import { useFonts, Oxanium_800ExtraBold } from '@expo-google-fonts/oxanium';
 import { Oxanium_400Regular } from '@expo-google-fonts/oxanium';
-import RNPickerSelect from 'react-native-picker-select';
 import MonthScroller from '../components/monthScroller';
 import Dropdown from '../components/dropDown';
-import CategoryBreakdown from '../components/categoryBreakdown';
+import CategoryBreakdown from '../components/expenseCategory';
+import React, { useState } from 'react';
+
 
 
 const categoryData = [
@@ -44,6 +45,8 @@ export default function Expense() {
       Oxanium_400Regular
     });
 
+    const [selectedPeriod, setSelectedPeriod] = useState('month'); // or any default like 'today'
+
 const total=200;
 
   return (
@@ -63,7 +66,11 @@ const total=200;
 
      {/* Sub-Page Title and Dropdown */}
       <View>
-        <Dropdown></Dropdown>
+                <Dropdown
+                  label="Expense"
+                  selectedValue={selectedPeriod}
+                  onValueChange={value => setSelectedPeriod(value)}
+                />
       </View>
 
      {/* Expense Donut chart */}

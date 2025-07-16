@@ -16,7 +16,7 @@ const TabButton = ({ button, selectedTab, setSelectedTab }) => {
       Oxanium_400Regular
     });
 
-  const [dimensions, setDimensions] = useState({ height: 50, width: 205 }); // default
+  const [dimensions, setDimensions] = useState({ height: 50, width: 250 }); // default
   const buttonWidth = dimensions.width / button.length;
   const tabPositionX = useSharedValue(buttonWidth * selectedTab);
   const [hasMeasured, setHasMeasured] = useState(false);
@@ -76,7 +76,7 @@ const TabButton = ({ button, selectedTab, setSelectedTab }) => {
             <Pressable key={index} onPress={() => onTabPress(index)}
               style={{width: buttonWidth,alignItems: 'center',justifyContent: 'center',height: dimensions.height,paddingVertical: 0,}}>
     
-              <Animated.Text style={[{fontFamily:"Oxanium_400Regular",fontSize: 20,fontWeight: '600',paddingVertical: 0,textAlignVertical: 'center',
+              <Animated.Text style={[{fontFamily:"Oxanium_400Regular",fontSize: 24,fontWeight: '600',paddingVertical: 0,textAlignVertical: 'center',
                 lineHeight: dimensions.height,includeFontPadding: false, textAlign: 'center',},animatedTextStyle,]}>
                 {btn.title}
               </Animated.Text>

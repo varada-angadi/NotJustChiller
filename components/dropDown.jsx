@@ -4,7 +4,7 @@ import RNPickerSelect from 'react-native-picker-select';
 import { useFonts, Oxanium_800ExtraBold } from '@expo-google-fonts/oxanium';
 import { Oxanium_400Regular } from '@expo-google-fonts/oxanium';
 
-export default function Dropdown({ onValueChange = () => {}, selectedValue }) {
+export default function Dropdown({ onValueChange = () => {}, selectedValue, label = "Expense" }) {
 const [fontsLoaded] = useFonts({
       Oxanium_800ExtraBold,
       Oxanium_400Regular
@@ -12,7 +12,7 @@ const [fontsLoaded] = useFonts({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Expense</Text>
+      <Text style={styles.title}>{label}</Text>
 
       <RNPickerSelect
         onValueChange={onValueChange}
