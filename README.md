@@ -17,7 +17,7 @@ Charts & UI: React Native Charts <br>
 # Screenshots / Demo
 
 Home Screen
-![Home Screen](assets/screenshots/index.jpeg)
+<img src="assets/screenshots/home.png" alt="Home Screen" width="300" height="300/>
 
 ### Budget Page
 ![Budget Page](assets/screenshots/budget.png)
