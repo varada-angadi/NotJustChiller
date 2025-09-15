@@ -1,4 +1,4 @@
-# NotJustChillar – Personal Finance & Budget Tracker App
+# NotJustChillar – Personal Finance Tracker App
 A React Native finance app to track income, expenses, budgets, and financial goals in a secure, organized, and visually appealing way. Built with Firebase backend and strong encryption for sensitive user data.
 
 # Features
