@@ -16,8 +16,8 @@ Charts & UI: React Native Charts <br>
 
 # Screenshots / Demo
 
-### Home Screen
-![Home Screen](assets/screenshots/home.png)
+Home Screen
+![Home Screen](assets/screenshots/index.jpeg)
 
 ### Budget Page
 ![Budget Page](assets/screenshots/budget.png)
