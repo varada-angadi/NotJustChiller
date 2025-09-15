@@ -1,142 +1,478 @@
-import { ScrollView, Text,View, StyleSheet, Image} from 'react-native';
-import DonutChartWithLabels from '../components/expenseChart';
+// screens/Expense.jsx
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { ScrollView, Text, View, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'react-native';
-import { useFonts, Oxanium_800ExtraBold } from '@expo-google-fonts/oxanium';
-import { Oxanium_400Regular } from '@expo-google-fonts/oxanium';
+import { useFonts, Oxanium_800ExtraBold, Oxanium_400Regular } from '@expo-google-fonts/oxanium';
+import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
+import { db } from '../config/firebase';
+import { getAuth } from "firebase/auth";
 import MonthScroller from '../components/monthScroller';
-import Dropdown from '../components/dropDown';
+import YearScroller from '../components/yearScoller';
 import CategoryBreakdown from '../components/expenseCategory';
-import React, { useState } from 'react';
+import ExpenseLineChart from '../components/expenseBar';
+import { useFinance } from '../context/balanceContext';
 
-
-
-const categoryData = [
-  {
-    name: 'Eats',
-    icon: require('../assets/expense/food.png'), // replace with your actual image paths
-    amount: 360,
-    color: '#8DA563',
-  },
-  {
-    name: 'Shopping',
-    icon: require('../assets/expense/shop.png'),
-    amount: 250,
-    color: '#FFD166',
-  },
-  {
-    name: 'Transport',
-    icon: require('../assets/expense/transport.png'),
-    amount: 110,
-    color: '#A6D1E6',
-  },
-  {
-    name: 'Health',
-    icon: require('../assets/expense/health.png'),
-    amount: 80,
-    color: '#EF476F',
-  },
-];
 
 export default function Expense() {
+  const [fontsLoaded] = useFonts({ Oxanium_800ExtraBold, Oxanium_400Regular });
+  const { currency } = useFinance();
+  const symbol = currency?.split(" ")[1] || "";
 
-  const [fontsLoaded] = useFonts({
-      Oxanium_800ExtraBold,
-      Oxanium_400Regular
-    });
+    // State management
+    const [expenseData, setExpenseData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    
+    // Date utilities
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.toLocaleString('default', { month: 'short' });
+    
+    const [selectedYear, setSelectedYear] = useState(currentYear);
+    const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+    const [userCreationYear, setUserCreationYear] = useState(currentYear);
+    const [selectedPeriod, setSelectedPeriod] = useState('expense');
 
-    const [selectedPeriod, setSelectedPeriod] = useState('month'); // or any default like 'today'
+  // Fetch user creation year (earliest transaction)
+  const fetchExpenseData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-const total=200;
+            const user = getAuth().currentUser;
+            if (!user) {
+              throw new Error('No authenticated user found');
+            }
 
-  return (
-    <SafeAreaView className="flex-1" style={{backgroundColor:"white", padding:10}}>
-    <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-    <ScrollView showsVerticalScrollIndicator={false}>
+            const txnsRef = collection(db, 'users', user.uid, 'transactions');
+                  const expenseQuery = query(
+                    txnsRef, 
+                    where('type', '==', 'expense'),
+                    orderBy('date', 'desc')
+                  );
 
-     {/* Page Title */}
-      <View className="flex-1">
-        <Text style={{color:'black',fontSize:30, fontFamily:'Oxanium_400Regular',}} >Track Your Expense</Text>
-      </View>
+      const snapshot = await getDocs(expenseQuery);
+      if (snapshot.empty) {
+        setExpenseData([]);
+        return;
+      }
+      const fetchedData = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          amount: Number(data.amount) || 0,
+          date: data.date?.toDate ? data.date.toDate() : new Date(data.date),
+          category: data.category || 'Other',
+          description: data.description || '',
+          ...data
+        };
+      });
 
-     {/* Month Scroller */}
-      <View>
-        <MonthScroller/>
-      </View>
+      setExpenseData(fetchedData);
 
-     {/* Sub-Page Title and Dropdown */}
-      <View>
-                <Dropdown
-                  label="Expense"
-                  selectedValue={selectedPeriod}
-                  onValueChange={value => setSelectedPeriod(value)}
-                />
-      </View>
+      // Set earliest year for year scroller
+      if (fetchedData.length > 0) {
+  const validDates = fetchedData
+    .map(item => {
+      const dateObj = item.date?.toDate?.(); // Convert Firestore Timestamp to JS Date
+      return dateObj instanceof Date ? dateObj.getTime() : null;
+    })
+    .filter(ts => ts !== null && !isNaN(ts));
 
-     {/* Expense Donut chart */}
-      <View>
-      <DonutChartWithLabels/>
-      </View>
+  const earliestYear = validDates.length
+    ? new Date(Math.min(...validDates)).getFullYear()
+    : currentYear;
 
-     {/* Categorical Analysis */}
-     <View>
-        <CategoryBreakdown/>
-     </View>
+  console.log("📅 Earliest year from Firebase (safe):", earliestYear);
+  setUserCreationYear(earliestYear);
+}
+
+    } catch (error) {
+      console.error("Error fetching expense data:", error);
+      setError(error.message);
+      setExpenseData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+    useEffect(() => {
+      fetchExpenseData();
+    }, [fetchExpenseData]);
+
+  // Generate chart data based on selected filters
+  const chartData = useMemo(() => {
+  if (!expenseData.length) return [];
+
+  const now = new Date();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  const getJsDate = (date) => date?.toDate?.() || new Date(date); // ⬅️ Ensure JS Date
+
+  switch (selectedMonth) {
+    case 'Last 6M': {
+      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
+      const filteredData = expenseData
+        .filter(item => getJsDate(item.date) >= sixMonthsAgo)
+        .reduce((acc, item) => {
+          const date = getJsDate(item.date);
+          const key = `${date.getFullYear()}-${date.getMonth()}`;
+          acc[key] = (acc[key] || 0) + item.amount;
+          return acc;
+        }, {});
+
+      return Object.entries(filteredData)
+        .map(([key, amount]) => {
+          const [year, month] = key.split('-');
+          return {
+            date: new Date(year, month).toLocaleString('default', { month: 'short' }),
+            amount: amount
+          };
+        })
+        .sort((a, b) => months.indexOf(a.date) - months.indexOf(b.date));
+    }
+
+    case 'Entire Year': {
+      const yearData = expenseData
+        .filter(item => getJsDate(item.date).getFullYear() === selectedYear)
+        .reduce((acc, item) => {
+          const month = getJsDate(item.date).getMonth();
+          acc[month] = (acc[month] || 0) + item.amount;
+          return acc;
+        }, {});
+
+      return months.map((month, index) => ({
+        date: month,
+        amount: yearData[index] || 0
+      }));
+    }
+
+    case 'All Time': {
+      const yearlyData = expenseData.reduce((acc, item) => {
+        const year = getJsDate(item.date).getFullYear();
+        acc[year] = (acc[year] || 0) + item.amount;
+        return acc;
+      }, {});
+
+      return Object.entries(yearlyData)
+        .map(([year, amount]) => ({ date: year, amount }))
+        .sort((a, b) => Number(a.date) - Number(b.date));
+    }
+
+    default: {
+      // Weekly breakdown
+      const monthIndex = months.indexOf(selectedMonth);
+      const weeklyData = expenseData
+        .filter(item => {
+          const date = getJsDate(item.date);
+          return date.getFullYear() === selectedYear && date.getMonth() === monthIndex;
+        })
+        .reduce((acc, item) => {
+          const day = getJsDate(item.date).getDate();
+          const weekIndex = Math.min(Math.floor((day - 1) / 7), 4);
+          acc[weekIndex] = (acc[weekIndex] || 0) + item.amount;
+          return acc;
+        }, {});
+
+      return Array.from({ length: 5 }, (_, index) => ({
+        date: `Week ${index + 1}`,
+        amount: weeklyData[index] || 0
+      }));
+    }
+  }
+}, [expenseData, selectedMonth, selectedYear]);
 
 
-
-      </ScrollView>
-      </SafeAreaView>
-
-
+  // Calculate total expense
+  const totalExpense = useMemo(() => 
+    chartData.reduce((sum, item) => sum + item.amount, 0),
+    [chartData]
   );
+
+  // Generate period label
+  const getPeriodLabel = useCallback(() => {
+    switch (selectedMonth) {
+      case 'Last 6M': return `Last 6 Months (${selectedYear})`;
+      case 'Entire Year': return `Entire Year ${selectedYear}`;
+      case 'All Time': return 'All Time';
+      default: return `${selectedMonth} ${selectedYear}`;
+    }
+  }, [selectedMonth, selectedYear]);
+
+  // Generate insights
+  const generateInsights = useCallback(() => {
+    if (!chartData.length) return null;
+
+    const maxEntry = chartData.reduce((max, curr) => 
+      curr.amount > max.amount ? curr : max, chartData[0]);
+
+    switch (selectedMonth) {
+      case 'Last 6M': {
+        const avgExpense = Math.round(totalExpense / 6);
+        const growth = chartData.length >= 2 ? 
+          (((chartData[chartData.length - 1].amount - chartData[0].amount) / chartData[0].amount) * 100).toFixed(1) : 0;
+        
+        return `• Best month: ${maxEntry.date} (₹${maxEntry.amount.toLocaleString()})\n• Average monthly expense: ${symbol}${avgExpense.toLocaleString()}\n• Growth trend: ${growth}%`;
+      }
+      case 'Entire Year': {
+        const avgExpense = Math.round(totalExpense / 12);
+        return `• Best month: ${maxEntry.date} (₹${maxEntry.amount.toLocaleString()})\n• Average monthly expense: ${symbol}${avgExpense.toLocaleString()}\n• Total year expense: ₹${totalExpense.toLocaleString()}`;
+      }
+      case 'All Time': {
+        const avgYearlyExpense = Math.round(totalExpense / chartData.length);
+        return `• Best year: ${maxEntry.date} (₹${maxEntry.amount.toLocaleString()})\n• Average yearly expense: ${symbol}${avgYearlyExpense.toLocaleString()}\n• Total all-time expense: ₹${totalExpense.toLocaleString()}`;
+      }
+      default:
+        return null;
+    }
+  }, [chartData, selectedMonth, totalExpense]);
+
+  // Event handlers
+  const handleYearSelect = useCallback((year) => {
+    setSelectedYear(year);
+    setSelectedMonth(currentMonth); // Reset to current month when year changes
+  }, [currentMonth]);
+
+  const handleMonthSelect = useCallback((month) => {
+    setSelectedMonth(month);
+  }, []);
+
+  // Loading state
+  // Loading state
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#8DA563" />
+          <Text style={styles.loadingText}>Loading income data...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Error: {error}</Text>
+          <Text style={styles.errorSubText}>Please try again later</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+    return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "white", padding: 10 }}>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <ScrollView showsVerticalScrollIndicator={false}>
+        
+        {/* Page Title */}
+        <View>
+          <Text style={{ color: 'black', fontSize: 30, fontFamily: 'Oxanium_400Regular' }}>
+            Track Your Expense
+          </Text>
+        </View>
+
+        {/* Year Scroller */}
+        <YearScroller 
+          userCreationYear={userCreationYear} 
+          selectedYear={selectedYear} 
+          onYearSelect={handleYearSelect}
+        />
+        
+        {/* Month/Period Scroller */}
+        <MonthScroller 
+          selectedYear={selectedYear} 
+          selectedMonth={selectedMonth} 
+          onMonthSelect={handleMonthSelect}
+        />
+
+        {/* Selected Period Info */}
+                <View style={[
+                  styles.periodContainer,
+                  selectedMonth === 'Last 6M' && styles.shortPeriodContainer,
+                  selectedMonth === 'Entire Year' && styles.mediumPeriodContainer,
+                  selectedMonth === 'All Time' && styles.longPeriodContainer
+                ]}>
+                  <Text style={styles.periodLabel}>{getPeriodLabel()}</Text>
+                  <Text style={styles.totalExpenseText}>
+                    Total Expense: {symbol}{totalExpense.toLocaleString()}
+                  </Text>
+                  {selectedYear === currentYear && selectedMonth === currentMonth && (
+                    <View style={styles.currentBadge}>
+                      <Text style={styles.currentBadgeText}>Current Month</Text>
+                    </View>
+                  )}
+                </View>
+
+        {/* Expense Chart */}
+        {chartData && chartData.length > 0 ? (
+          <ExpenseLineChart 
+            expenseData={chartData}
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            chartTitle={
+              selectedMonth === 'Last 6M' ? 'Last 6 Months Expense Trend' :
+              selectedMonth === 'Entire Year' ? 'Monthly Expense Overview' :
+              selectedMonth === 'All Time' ? 'Yearly Expense Overview' :
+              'Weekly Expense Breakdown'
+            }
+          />
+        ) : (
+          <View style={styles.noDataContainer}>
+            <Text style={styles.noDataText}>No expense data available for this period</Text>
+          </View>
+        )}
+
+        {/* Insights */}
+                {generateInsights() && (
+                  <View style={styles.insightsContainer}>
+                    <Text style={styles.insightsTitle}>Insights</Text>
+                    <Text style={styles.insightsText}>{generateInsights()}</Text>
+                  </View>
+                )}
+        
+                {/* Category Analysis */}
+                <View style={styles.titleContainer}>
+                          <Text style={{color: 'black',
+                    fontSize: 25,
+                    fontFamily: 'Oxanium_400Regular',
+                    paddingLeft:10,}}>Categorical Breakdown of Income</Text>
+                        </View>
+                <CategoryBreakdown />
+                 </ScrollView>
+                    </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: 'white',
+    padding: 10,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    fontFamily: 'Oxanium_400Regular',
+    color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 10,
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: 'Oxanium_400Regular',
+    color: '#d32f2f',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  errorSubText: {
+    fontSize: 14,
+    fontFamily: 'Oxanium_400Regular',
+    color: '#666',
+    textAlign: 'center',
+  },
+  titleContainer: {
+    marginBottom: 10,
+    marginTop:20,
   },
   title: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-    color: '#1c2c21',
+    color: 'black',
+    fontSize: 30,
+    fontFamily: 'Oxanium_400Regular',
+    paddingLeft:10,
   },
-  itemContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+  periodContainer: {
+    padding: 15,
+    marginVertical: 10,
+    borderRadius: 12,
+    position: 'relative',
+    backgroundColor: '#F8F9FA',
   },
-  icon: {
-    width: 28,
-    height: 28,
-    marginRight: 10,
-    borderRadius: 6,
+  shortPeriodContainer: {
+    borderLeftColor: '#4A90E2',
+    backgroundColor: '#F3F8FF',
   },
-  categoryText: {
-    flex: 1,
+  mediumPeriodContainer: {
+    borderLeftColor: '#66BB6A',
+    backgroundColor: '#E8F5E8',
+  },
+  longPeriodContainer: {
+    borderLeftColor: '#9C27B0',
+    backgroundColor: '#FCF4FF',
+  },
+  periodLabel: {
     fontSize: 14,
-    color: '#1c2c21',
-    fontWeight: '500',
+    fontFamily: 'Oxanium_400Regular',
+    color: '#666',
+    marginBottom: 5,
   },
-  barWrapper: {
-    height: 8,
-    width: '40%',
-    backgroundColor: '#e5e5e5',
-    borderRadius: 5,
-    marginRight: 8,
-    overflow: 'hidden',
+  totalIncomeText: {
+    fontSize: 20,
+    fontFamily: 'Oxanium_400Regular',
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 5,
   },
-  bar: {
-    height: '100%',
-    borderRadius: 5,
+  currentBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#8DA563',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  percentageText: {
-    width: 50,
-    textAlign: 'right',
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#1c2c21',
+  currentBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontFamily: 'Oxanium_400Regular',
+    fontWeight: '600',
+  },
+  noDataContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  noDataText: {
+    fontSize: 16,
+    fontFamily: 'Oxanium_400Regular',
+    color: '#666',
+    textAlign: 'center',
+  },
+  insightsContainer: {
+    backgroundColor: '#FFF9E6',
+    marginHorizontal:10,
+    padding: 15,
+    marginVertical: 10,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FFC107',
+  },
+  insightsTitle: {
+    fontSize: 18,
+    fontFamily: 'Oxanium_400Regular',
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  insightsText: {
+    fontSize: 16,
+    fontFamily: 'Oxanium_400Regular',
+    color: '#666',
+    lineHeight: 20,
   },
 });

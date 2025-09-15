@@ -1,26 +1,73 @@
-import { View, Text,TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text,TouchableOpacity, ScrollView, Image, Button } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'react-native';
 import { useFonts, Oxanium_800ExtraBold } from '@expo-google-fonts/oxanium';
 import { Oxanium_400Regular } from '@expo-google-fonts/oxanium';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import dayjs from 'dayjs';
 import WeeklyBarChart from '../components/weeklyExpenseGraph';
 import SavingsCard from '../components/savingsCard';
 import RecentActivitySection from '../components/recent';
 import StickyFAB from '../components/fab';
+import { signOut } from 'firebase/auth';
+import Toast from 'react-native-toast-message';
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "../config/firebase";
+import { useFinance } from '../context/balanceContext';
+import { useSummary } from '../context/summaryContext';
 
 export default function Home() {
-    const router=useRouter();
+  const router=useRouter();
   const [showBalance, setShowBalance] = useState(false);
   const today = dayjs().format('MMMM D, YYYY');
   const seperatorStyles={height:80, width:5, backgroundColor:"black"};
+
   const [fontsLoaded] = useFonts({
       Oxanium_800ExtraBold,
       Oxanium_400Regular
     });
+
+  const [name, setName] = useState("");
+  const { balance, currency, addIncome, addExpense } = useFinance();
+  const symbol = currency?.split(" ")[1] || "";
+  const { totalIncome, totalExpense } = useSummary();
+
+  useEffect(() => {
+  const fetchUserData = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      const docRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setName(docSnap.data().name);
+      } else {
+        console.log("No such document!");
+      }
+    }
+  };
+
+  fetchUserData();
+}, []);
+
+
+  const handleLogout = async () => {
+  try {
+    await signOut(auth);
+    router.replace("/");
+    Toast.show({
+      type: 'success',
+      text1: 'Logged out',
+    });
+  } catch (error) {
+    Toast.show({
+      type: 'error',
+      text1: 'Logout failed',
+      text2: error.message,
+    });
+  }
+};
 
   return (
     <SafeAreaView className="flex-1 bg-[#1c2c21]">
@@ -35,12 +82,19 @@ export default function Home() {
           className="flex-row items-center"
           style={{ paddingTop: 50, paddingHorizontal: 30 }}
         >
-          <Text
-            className="text-white"
-            style={{ fontFamily: "Oxanium_400Regular", fontSize: 30 }}
-          >
-            Hey, XYZ
+          <View style={{ flex: 1 }}>
+    <Text
+      className="text-white"
+      numberOfLines={1}
+      ellipsizeMode="tail"
+      style={{
+        fontFamily: "Oxanium_400Regular",
+        fontSize: 30,
+      }}
+    >
+            Hey, {name || "username not found"}
           </Text>
+          </View>
           <TouchableOpacity
             style={{ paddingLeft: 20, alignItems: "center" }}
             onPress={() => setShowBalance(!showBalance)}
@@ -60,7 +114,7 @@ export default function Home() {
           <Text
             style={{
               color: "white",
-              fontSize: 30,
+              fontSize: 25,
               fontFamily: "Oxanium_400Regular",
             }}
           >
@@ -70,14 +124,15 @@ export default function Home() {
           <Text
             style={{
               color: "white",
-              fontSize: 60,
-              fontFamily: "Oxanium_800ExtraBold",
+              fontSize: 40,
+              fontFamily: "Oxanium_400Regular",
+              padding:10,
             }}
           >
-            {showBalance ? "₹ 12,340" : "•••••"}
+            {showBalance ? `${symbol} ${balance?.toLocaleString()}` : "•••••"}
           </Text>
 
-          <Text
+          {/*<Text
             style={{
               color: "#8DA563",
               fontSize: 20,
@@ -86,7 +141,8 @@ export default function Home() {
             }}
           >
             “You're within budget”
-          </Text>
+          </Text>*/}
+
 
           <Text
             style={{
@@ -124,7 +180,7 @@ export default function Home() {
                   color: "#1C2C21",
                 }}
               >
-                {showBalance ? "₹ 3,340" : "•••••"}
+                {showBalance ? `${symbol} ${totalIncome.toLocaleString()}` : "•••••"}
               </Text>
             </TouchableOpacity>
             <View style={seperatorStyles}></View>
@@ -152,53 +208,57 @@ export default function Home() {
                   color: "#1C2C21",
                 }}
               >
-                {showBalance ? "₹ 5,000" : "•••••"}
+                {showBalance ? `${symbol} ${totalExpense.toLocaleString()}` : "•••••"}
               </Text>
             </TouchableOpacity>
             
           </View>
-          <Text
+          {/*<Text
             className="mt-2 text-center"
             style={{ fontFamily: "Oxanium_400Regular", fontSize: 15 }}
           >
             “You have spend 10% more than last month”
-          </Text>
+          </Text>*/}
 
           <View>
             <View className="flex-row justify-between items-center mt-5">
               <Text
                 className="flex-1"
-                style={{ fontFamily: "Oxanium_400Regular", fontSize: 25 }}
+                style={{ fontFamily: "Oxanium_400Regular", fontSize: 25, paddingBottom:5 }}
               >
                 Expense
-              </Text>
-              <Text
-                className="flex"
-                style={{ fontFamily: "Oxanium_400Regular", fontSize: 15 }}
-              >
-                This Week
               </Text>
             </View>
             <WeeklyBarChart></WeeklyBarChart>
           </View>
 
-          <View className="mt-5">
+          {/*<View className="mt-5">
             <SavingsCard saved={3000} goal={10000} />
-          </View>
+          </View>*/}
 
-          <View className="mt-5 mb-0">
-            <Text
-              className="flex-1"
-              style={{
-                fontFamily: "Oxanium_400Regular",
-                fontSize: 25,
-                color: "black",
-              }}
-            >
-              Recent Activity
-            </Text>
+          <View style={{marginTop:30}}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5,}}>
+              <Text style={{ fontSize: 25, fontFamily: 'Oxanium_400Regular' }}>Recent Activity</Text>
+              <Text style={{ fontSize: 18, color: '#1E88E5', fontFamily: 'Oxanium_400Regular' }} onPress={() => router.push('/allHistory')}>View All</Text>
+            </View>
             <RecentActivitySection></RecentActivitySection>
           </View>
+
+          <TouchableOpacity
+  onPress={handleLogout}
+  style={{
+    backgroundColor: '#8DA563',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    marginTop: 20,
+  }}
+>
+  <Text style={{ color: 'white', fontFamily: 'Michroma_400Regular' }}>
+    Logout
+  </Text>
+</TouchableOpacity>
+
 
           
 

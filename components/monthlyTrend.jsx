@@ -9,8 +9,6 @@ import Animated, {
 } from 'react-native-reanimated';
 
 
-
-
 const MonthlyTrendChart = ({ data }) => {
     const screenWidth = Dimensions.get('screen').width;
   const chartWidth = screenWidth - 40;

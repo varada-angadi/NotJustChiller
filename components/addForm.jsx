@@ -1,13 +1,16 @@
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
-import { View, Text, SafeAreaView, Image, TouchableOpacity, ImageBackground, TextInput,KeyboardAvoidingView, Platform,ScrollView } from 'react-native';
+import { View, Text, SafeAreaView, Image, TouchableOpacity, ImageBackground, TextInput,KeyboardAvoidingView, Platform,ScrollView, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useFonts, Oxanium_400Regular } from '@expo-google-fonts/iceland';
 import { Oxanium_800ExtraBold } from '@expo-google-fonts/oxanium';
 import { Formik } from "formik";
-import { transactionSchema } from "../utils/addExIn";
+import { transactionSchema } from "../utils/addTransaction";
 import FormDatePicker from "./datePicker";
 import CategorySelector from "./addCategory";
 import { expenseCategories, incomeCategories } from '../utils/category';
-
+import { db } from '../config/firebase';
+import { getAuth } from 'firebase/auth';
+import { useFinance } from '../context/balanceContext';
+import { doc, updateDoc, increment, addDoc, collection } from "firebase/firestore";
 
 const AddForm = forwardRef(({ isExpense }, ref) => {
     const [fontsLoaded] = useFonts({
@@ -15,18 +18,61 @@ const AddForm = forwardRef(({ isExpense }, ref) => {
           Oxanium_400Regular
         });
 const formikRef = useRef();
+const { addIncome, addExpense, currency } = useFinance();
+const symbol = currency?.split(" ")[1] || "";
 
   useImperativeHandle(ref, () => ({
     resetForm: () => {
       formikRef.current?.resetForm();
     }
   }));
-    const handleSubmit = (values) => {
-    console.log("Form Submitted:", values);
-  };
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+  const handleSubmit = async (values, { resetForm }) => {
+  try {
+    const transactionData = {
+      title: values.title,
+      amount: parseFloat(values.amount),
+      date: values.date,
+      category: values.category,
+      description: values.description || "",
+      type: isExpense ? "expense" : "income",
+      
+    };
+    await addDoc(collection(db, "users", user.uid, "transactions"), transactionData);
+    const overviewRef = doc(db, "users", user.uid, "summary", "overview");
+    if (transactionData.type === "income") {
+      await updateDoc(overviewRef, {
+        totalIncome: increment(transactionData.amount),
+        lastUpdated: new Date().toISOString(),
+      });
+    } else {
+      await updateDoc(overviewRef, {
+        totalExpense: increment(transactionData.amount),
+        lastUpdated: new Date().toISOString(),
+      });
+    }
+    if (transactionData.type === "income") {
+      await addIncome(transactionData.amount);
+    } else {
+      await addExpense(transactionData.amount);
+    }
+
+    alert("Transaction saved successfully!");
+    resetForm(); // Clear form after save
+  } catch (error) {
+    console.error("Error saving transaction:", error);
+    alert("Something went wrong while saving. Please try again.");
+  }
+};
+
 
     return(
-        <KeyboardAvoidingView behavior="padding">
+        <SafeAreaView style={{ flex: 1}}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1,}}>
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        
 
             <Formik innerRef={formikRef} initialValues={{Title:"",Amount:"",date: new Date(),Category:"",Description:""}} validationSchema={transactionSchema} onSubmit={handleSubmit}>
                 {({handleChange,handleBlur,handleSubmit,values,errors,touched,setFieldValue}) => (
@@ -50,7 +96,7 @@ const formikRef = useRef();
                                     Amount
                                 </Text>
                                 <TextInput style={{fontSize:18,height: 45,width: '100%',borderWidth: 2,borderColor: '#8da563',borderRadius: 6,paddingHorizontal: 10,color: '#1C2C21',backgroundColor: 'white',}}
-                                placeholder="₹ Enter the Amount" onChangeText={handleChange("amount")} value={values.amount} onBlur={handleBlur("amount")} />
+                                placeholder= {`${symbol || ""} Enter the Amount`} keyboardType="numeric" onChangeText={handleChange("amount")} value={values.amount} onBlur={handleBlur("amount")} />
                                 {touched.amount && errors.amount && (<Text style={{ fontSize: 12, color: 'red', marginTop: 4 }}>{errors.amount}</Text>)}
                             </View>
                         </View>
@@ -98,7 +144,9 @@ const formikRef = useRef();
                 </View>
                 )}
             </Formik>
-        </KeyboardAvoidingView>
+            </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
+            </SafeAreaView>
 
 
 );});

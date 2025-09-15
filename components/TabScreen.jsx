@@ -17,7 +17,7 @@ const TabScreen = ({ selectedTab, setSelectedTab }) => {
         selectedTab={selectedTab}
         setSelectedTab={setSelectedTab}
       />
-      <View style={{ flex: 1 }}>
+      <View>
         {selectedTab === 0 ? (
           <AddForm isExpense={false} />
         ) : (

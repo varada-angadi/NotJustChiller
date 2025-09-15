@@ -1,3 +1,4 @@
+//category.js
 export const expenseCategories = [
   {name:'EatsTreats', icon:require('../assets/expense/food.png')},
   {name:'Transport', icon:require('../assets/expense/transport.png')},

@@ -15,16 +15,15 @@ export default function Index() {
   if (!fontsLoaded) return null;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#395942] relative">
+    <SafeAreaView className="flex-1 relative" style={{backgroundColor:"#1C2C21"}}>
       <View className="flex-1 items-center">
         
 
         <Image
-          source={require('../assets/startEle1.png')}
+          source={require('../assets/logo.png')}
           className="w-[334px] h-[417px] mt-[130px]"
           resizeMode="contain"
         />
-        <View className="absolute inset-0 bg-black/40" />
 
         <Text
           style={{ fontFamily: 'Iceland_400Regular' }}
@@ -35,7 +34,7 @@ export default function Index() {
 
         <Text
           style={{ fontFamily: 'Oxanium_800ExtraBold' }}
-          className="text-white text-[80px] leading-[80px] tracking-[2px] -mt-6"
+          className="text-white text-[80px] leading-[80px] tracking-[2px] -mt-5"
         >
           CH₹LLAR
         </Text>
