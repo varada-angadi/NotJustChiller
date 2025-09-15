@@ -16,20 +16,13 @@ Charts & UI: React Native Charts <br>
 
 # Screenshots / Demo
 
-Home Screen
 <img src="assets/screenshots/index.jpeg" alt="Home Screen" width="100" height="300"/>
+<img src="assets/screenshots/signup.jpeg" alt="Home Screen" width="100" height="300"/>
+<img src="assets/screenshots/login.jpeg" alt="Home Screen" width="100" height="300"/>
+<img src="assets/screenshots/home.jpeg" alt="Home Screen" width="100" height="300"/>
+<img src="assets/screenshots/income.jpeg" alt="Home Screen" width="100" height="300"/>
 
-### Budget Page
-![Budget Page](assets/screenshots/budget.png)
 
-### Expense Tracker
-![Expense Tracker](assets/screenshots/expense.png)
-
-### History Page
-![History Page](assets/screenshots/history.png)
-
-### Goals & Auto Savings
-![Goals Page](assets/screenshots/goals.png)
 
 
 # Setup & Installation
