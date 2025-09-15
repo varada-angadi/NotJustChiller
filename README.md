@@ -26,6 +26,8 @@ Charts & UI: React Native Charts <br>
 <td><img src="assets/screenshots/expense.jpeg" alt="Home Screen" width="100" height="300"/><td>
 <td><img src="assets/screenshots/addIncome.jpeg" alt="Home Screen" width="100" height="300"/><td>
 <td><img src="assets/screenshots/addExpense.jpeg" alt="Home Screen" width="100" height="300"/><td>
+<td><img src="assets/screenshots/history.jpeg" alt="Home Screen" width="100" height="300"/><td>
+<td><img src="assets/screenshots/category.jpeg" alt="Home Screen" width="100" height="300"/><td>
  </tr>
 </table>
 
