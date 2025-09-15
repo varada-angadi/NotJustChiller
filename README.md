@@ -16,6 +16,22 @@ Charts & UI: React Native Charts <br>
 
 # Screenshots / Demo
 
+### Home Screen
+![Home Screen](assets/screenshots/home.png)
+
+### Budget Page
+![Budget Page](assets/screenshots/budget.png)
+
+### Expense Tracker
+![Expense Tracker](assets/screenshots/expense.png)
+
+### History Page
+![History Page](assets/screenshots/history.png)
+
+### Goals & Auto Savings
+![Goals Page](assets/screenshots/goals.png)
+
+
 # Setup & Installation
 
 1. Clone the repository <br>
