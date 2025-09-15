@@ -18,11 +18,11 @@ Charts & UI: React Native Charts <br>
 
 <table>
   <tr>
-<img src="assets/screenshots/index.jpeg" alt="Home Screen" width="100" height="300"/>
-<img src="assets/screenshots/signup.jpeg" alt="Home Screen" width="100" height="300"/>
-<img src="assets/screenshots/login.jpeg" alt="Home Screen" width="100" height="300"/>
-<img src="assets/screenshots/home.jpeg" alt="Home Screen" width="100" height="300"/>
-<img src="assets/screenshots/income.jpeg" alt="Home Screen" width="100" height="300"/>
+<td><img src="assets/screenshots/index.jpeg" alt="Home Screen" width="100" height="300"/><td>
+<td><img src="assets/screenshots/signup.jpeg" alt="Home Screen" width="100" height="300"/><td>
+<td><img src="assets/screenshots/login.jpeg" alt="Home Screen" width="100" height="300"/><td>
+<td><img src="assets/screenshots/home.jpeg" alt="Home Screen" width="100" height="300"/><td>
+<td><img src="assets/screenshots/income.jpeg" alt="Home Screen" width="100" height="300"/><td>
  </tr>
 </table>
 
