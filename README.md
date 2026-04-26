@@ -11,7 +11,6 @@ Extensible & Scalable – Designed for real-world production use, modular archit
 # Tech Stack
 Frontend: React Native, Expo <br>
 Backend & Database: Firebase (Auth + Firestore) <br>
-Storage & Security: AES-256, TLS encryption <br>
 Charts & UI: React Native Charts <br>
 
 # Screenshots / Demo
