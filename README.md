@@ -36,7 +36,7 @@ Charts & UI: React Native Charts <br>
 # Setup & Installation
 
 1. Clone the repository <br>
-git clone https://github.com/yourusername/NotJustChillar.git <br>
+git clone https://github.com/varada-angadi/NotJustChillar.git <br>
 cd NotJustChillar <br>
 
 
