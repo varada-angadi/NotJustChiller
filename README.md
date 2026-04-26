@@ -4,7 +4,7 @@ A React Native finance app to track income, expenses, budgets, and financial goa
 # Features
 Track Income & Expenses – Add, edit, and delete transactions <br>
 Visual Analytics – Charts showing expense trends, category breakdowns, and monthly comparisons. <br>
-Secure Storage – AES-256 encryption & Firebase for secure storage of user data. <br>
+Secure Storage – Firebase for secure storage of user data. <br>
 Recent Activity & History – See transactions day-wise, similar to Google Pay. <br>
 Extensible & Scalable – Designed for real-world production use, modular architecture. <br>
 
